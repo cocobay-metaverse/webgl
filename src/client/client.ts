@@ -4,11 +4,23 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
+declare global {
+    interface Window {
+        isDebug: boolean
+    }
+}
+
+window.isDebug = false
+
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0xa0a0a0)
 
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 1, 30000)
 camera.position.set(-770, 276, 793)
+
+const cameraHelper = new THREE.CameraHelper(camera)
+cameraHelper.visible = false
+scene.add(cameraHelper)
 
 const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -33,11 +45,13 @@ dirLight.castShadow = true
 dirLight.shadow.camera = new THREE.OrthographicCamera(-1500, 1500, 1800, -1800, 1000, 4000)
 scene.add(dirLight)
 
-// const dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 5)
-// scene.add(dirLightHelper)
+const dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 5)
+dirLightHelper.visible = false
+scene.add(dirLightHelper)
 
-// const dirLightCamHelper = new THREE.CameraHelper(dirLight.shadow.camera)
-// scene.add(dirLightCamHelper)
+const dirLightCamHelper = new THREE.CameraHelper(dirLight.shadow.camera)
+dirLightCamHelper.visible = false
+scene.add(dirLightCamHelper)
 
 function createPathStrings(filename: string) {
     const basePath = 'models/skybox/'
@@ -143,6 +157,15 @@ function loadAvatar() {
     )
 }
 
+const debuggingTools = new Array<any>(cameraHelper, dirLightHelper, dirLightCamHelper)
+
+function updateDebuggingTools() {
+    debuggingTools.forEach((tool) => {
+        tool.visible = window.isDebug
+        tool.update()
+    })
+}
+
 window.addEventListener('resize', onWindowResize, false)
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight
@@ -156,6 +179,7 @@ function animate() {
     const delta = clock.getDelta()
     if (mixer) mixer.update(delta)
     controls.update()
+    updateDebuggingTools()
     render()
 }
 
