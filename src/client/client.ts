@@ -1,19 +1,11 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0xa0a0a0)
-// scene.add(new THREE.AxesHelper(5))
-
-// const light = new THREE.PointLight()
-// light.position.set(0.8, 1.4, 1.0)
-// scene.add(light)
-
-// const ambientLight = new THREE.AmbientLight(0xf5f5f3, 0.4)
-// scene.add(ambientLight)
 
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 1, 30000)
 camera.position.set(-770, 276, 793)
@@ -36,10 +28,16 @@ hemiLight.position.set(0, 200, 0)
 scene.add(hemiLight)
 
 const dirLight = new THREE.DirectionalLight(0xffffff)
-dirLight.position.set(500, 4000, 1000)
-// dirLight.castShadow = true
-dirLight.shadow.camera = new THREE.OrthographicCamera(-120, 120, 180, -100, 50, 1000)
+dirLight.position.set(1000, 1500, -500)
+dirLight.castShadow = true
+dirLight.shadow.camera = new THREE.OrthographicCamera(-1500, 1500, 1800, -1800, 1000, 4000)
 scene.add(dirLight)
+
+// const dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 5)
+// scene.add(dirLightHelper)
+
+// const dirLightCamHelper = new THREE.CameraHelper(dirLight.shadow.camera)
+// scene.add(dirLightCamHelper)
 
 function createPathStrings(filename: string) {
     const basePath = 'models/skybox/'
@@ -65,6 +63,7 @@ function loadSkybox() {
     const materialArray = createMaterialArray('Daylight')
     const skyboxGeo = new THREE.BoxGeometry(10000, 10000, 10000)
     const skybox = new THREE.Mesh(skyboxGeo, materialArray)
+    skybox.castShadow = false
     scene.add(skybox)
 }
 
@@ -82,13 +81,21 @@ gltfLoader.load(
     'models/island.gltf',
     function (gltf) {
         gltf.scenes.forEach((object) => {
-            object.castShadow = true
-            object.receiveShadow = true
             object.scale.set(5, 5, 5)
-            object.traverse((child) => {
-                if ((<THREE.Mesh>child).isMesh) {
-                    child.castShadow = true
-                    child.receiveShadow = true
+            object.traverse((childObject) => {
+                const child: THREE.Mesh = <THREE.Mesh>childObject
+                if (child.isMesh) {
+                    const material = <THREE.Material>child.material
+                    if (material.name == 'water_mat') {
+                        child.castShadow = false
+                        child.receiveShadow = true
+                    } else if (material.name == 'island') {
+                        child.castShadow = false
+                        child.receiveShadow = true
+                    } else {
+                        child.castShadow = true
+                        child.receiveShadow = true
+                    }
                 }
             })
             scene.add(object)
@@ -109,6 +116,7 @@ function loadAvatar() {
         'models/avatar.fbx',
         (object) => {
             object.castShadow = true
+            object.receiveShadow = true
             object.scale.set(2, 2, 2)
             object.position.set(-500, 140, 500)
 
