@@ -15,6 +15,9 @@ window.isDebug = false
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0xa0a0a0)
 
+const axesHelper = new THREE.AxesHelper(90)
+scene.add(axesHelper)
+
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 1, 30000)
 camera.position.set(-770, 276, 793)
 
@@ -82,6 +85,7 @@ function loadSkybox() {
 }
 
 let mixer: THREE.AnimationMixer
+let mixer2: THREE.AnimationMixer
 
 const gltfLoader = new GLTFLoader()
 const dracoLoader = new DRACOLoader()
@@ -116,6 +120,7 @@ gltfLoader.load(
         })
         loadSkybox()
         loadAvatar()
+        loadAvatar2()
     },
     function (xhr) {
         console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
@@ -127,16 +132,48 @@ gltfLoader.load(
 
 function loadAvatar() {
     fbxLoader.load(
-        'models/avatar.fbx',
+        'models/avatar-samba.fbx',
         (object) => {
             object.castShadow = true
             object.receiveShadow = true
             object.scale.set(2, 2, 2)
-            object.position.set(-500, 140, 500)
+            object.position.set(-550, 160, 400)
 
             mixer = new THREE.AnimationMixer(object)
             const clip = THREE.AnimationClip.findByName(object.animations, 'mixamo.com')
             const action = mixer.clipAction(clip)
+            action.play()
+
+            object.traverse((child) => {
+                if ((<THREE.Mesh>child).isMesh) {
+                    child.castShadow = true
+                    child.receiveShadow = true
+                }
+            })
+
+            scene.add(object)
+        },
+        (xhr) => {
+            console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+        },
+        (error) => {
+            alert(error)
+        }
+    )
+}
+
+function loadAvatar2() {
+    fbxLoader.load(
+        'models/avatar2-samba.fbx',
+        (object) => {
+            object.castShadow = true
+            object.receiveShadow = true
+            object.scale.set(0.1, 0.1, 0.1)
+            object.position.set(-400, 150, 480)
+
+            mixer2 = new THREE.AnimationMixer(object)
+            const clip = THREE.AnimationClip.findByName(object.animations, 'mixamo.com')
+            const action = mixer2.clipAction(clip)
             action.play()
 
             object.traverse((child) => {
@@ -178,6 +215,7 @@ function animate() {
     requestAnimationFrame(animate)
     const delta = clock.getDelta()
     if (mixer) mixer.update(delta)
+    if (mixer2) mixer2.update(delta)
     controls.update()
     updateDebuggingTools()
     render()
